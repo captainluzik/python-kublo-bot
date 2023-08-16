@@ -2,7 +2,7 @@ from aiogram import types
 from typing import Optional
 
 from sqlalchemy import (
-    Column, Integer, String, select, insert, literal_column, update
+    Column, Integer, String, select, insert, literal_column, update, BigInteger
 )
 
 from settings import DATABASE_URI
@@ -30,11 +30,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    telegramID = Column(Integer, nullable=False)
+    telegramID = Column(BigInteger, nullable=False)
     username = Column(String(32), nullable=True)
     first_name = Column(String(32), nullable=True)
     last_name = Column(String(32), nullable=True)
-    chatID = Column(Integer, nullable=True)
+    chatID = Column(BigInteger, nullable=True)
     stars = Column(Integer, default=0)
 
     def __repr__(self):
