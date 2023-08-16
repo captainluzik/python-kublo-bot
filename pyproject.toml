@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "python_kublo_bot"
+version = "0.1.0"
+description = ""
+authors = ["luzanovsky <luzanovsky@prb.team>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = {url = "https://github.com/aiogram/aiogram/archive/refs/heads/dev-3.x.zip"}
+python-dotenv = "^1.0.0"
+SQLAlchemy = "^2.0.20"
+aioredis = "^2.0.1"
+redis = "^5.0.0"
+asyncpg = "^0.28.0"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

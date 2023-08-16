@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  postgres:
+    restart: unless-stopped
+    image: postgres:13.1-alpine
+    env_file:
+      - ./.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - kublo_network
+
+  redis:
+    restart: unless-stopped
+    image: redis:6.0.9-alpine
+    env_file:
+      - ./.env
+    networks:
+      - kublo_network
+
+  bot:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: DockerFile
+    env_file:
+      - ./.env
+    networks:
+      - kublo_network
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+    postgres_data:
+
+networks:
+    kublo_network:
+        driver: bridge
