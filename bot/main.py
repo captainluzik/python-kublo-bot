@@ -45,6 +45,9 @@ async def only_admin_commands(handler, event, data):
         if event.message.text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
         return
+    else:
+        if event.message.text == "/gif" or event.message.text == "/gif@python_kublo_bot":
+            pass
     return await handler(event, data)
 
 
