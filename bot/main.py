@@ -17,6 +17,20 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 @dp.update.outer_middleware()
+async def random_message_middleware(handler, event, data):
+    counter = int(await redis.get("counter"))
+    print(counter)
+    print("!!!!")
+    if counter == 10:
+        await event.message.answer(random.choice(const.RANDOM_ANSWERS))
+        await redis.set("counter", 0)
+        return
+    else:
+        await redis.set("counter", int(counter) + 1) if counter else await redis.set("counter", 1)
+    return await handler(event, data)
+
+
+@dp.update.outer_middleware()
 async def save_user_middleware(handler, event, data):
     user = await save_user(event.message)
     data['user'] = user
@@ -30,20 +44,6 @@ async def only_admin_commands(handler, event, data):
         if event.message.text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
         return
-    return await handler(event, data)
-
-
-@dp.update.outer_middleware()
-async def random_message_middleware(handler, event, data):
-    counter = int(await redis.get("counter"))
-    print(counter)
-    print("!!!!")
-    if counter == 10:
-        await event.message.answer(random.choice(const.RANDOM_ANSWERS))
-        await redis.set("counter", 0)
-        return
-    else:
-        await redis.set("counter", int(counter) + 1) if counter else await redis.set("counter", 1)
     return await handler(event, data)
 
 
