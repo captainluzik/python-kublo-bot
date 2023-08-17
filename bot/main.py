@@ -8,13 +8,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 import constants as const
 from db import save_user, get_user, add_star, minus_star, get_top_users
-from magic_filter import F
 from aiogram.filters import Command
-from pprint import pprint
+import random
 
 from db import init_database, stop_database
 
 logging.basicConfig(level=logging.DEBUG)
+
+redis.set("counter", 0)
 
 
 @dp.update.outer_middleware()
@@ -30,6 +31,15 @@ async def only_admin_commands(handler, event, data):
         commands = ["/start", "/top", "+", "-"]
         if event.message.text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
+        return
+    return await handler(event, data)
+
+
+@dp.update.outer_middleware()
+async def random_message_middleware(handler, event, data):
+    counter = int(redis.get("counter"))
+    if counter == 10:
+        await event.message.answer(random.choice(const.RANDOM_ANSWERS))
         return
     return await handler(event, data)
 
