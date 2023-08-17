@@ -40,7 +40,8 @@ async def save_user_middleware(handler, event, data):
 
 @dp.update.outer_middleware()
 async def only_admin_commands(handler, event, data):
-    if int(event.message.from_user.id) != int(ADMIN_ID):
+    if int(event.message.from_user.id) != int(
+            ADMIN_ID) and event.message.text != "/gif" and event.message.text != "/gif@python_kublo_bot":
         commands = ["/start", "/top", "+", "-"]
         if event.message.text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
