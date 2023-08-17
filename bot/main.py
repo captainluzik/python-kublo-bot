@@ -15,8 +15,6 @@ from db import init_database, stop_database
 
 logging.basicConfig(level=logging.DEBUG)
 
-redis.set("counter", 0)
-
 
 @dp.update.outer_middleware()
 async def save_user_middleware(handler, event, data):
@@ -43,7 +41,7 @@ async def random_message_middleware(handler, event, data):
         await redis.set("counter", 0)
         return
     else:
-        await redis.set("counter", int(counter) + 1)
+        await redis.set("counter", int(counter) + 1) if counter else await redis.set("counter", 1)
     return await handler(event, data)
 
 
