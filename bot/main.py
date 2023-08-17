@@ -40,6 +40,7 @@ async def random_message_middleware(handler, event, data):
     counter = int(redis.get("counter"))
     if counter == 10:
         await event.message.answer(random.choice(const.RANDOM_ANSWERS))
+        await redis.set("counter", 0)
         return
     return await handler(event, data)
 
