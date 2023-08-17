@@ -20,8 +20,6 @@ logging.basicConfig(level=logging.DEBUG)
 @dp.update.outer_middleware()
 async def random_message_middleware(handler, event, data):
     counter = int(await redis.get("counter"))
-    print(counter)
-    print("!!!!")
     if counter == 10:
         await event.message.answer(random.choice(const.RANDOM_ANSWERS))
         await redis.set("counter", 0)
@@ -42,7 +40,7 @@ async def save_user_middleware(handler, event, data):
 async def only_admin_commands(handler, event, data):
     if int(event.message.from_user.id) != int(
             ADMIN_ID) and event.message.text != "/gif" and event.message.text != "/gif@python_kublo_bot":
-        commands = ["/start", "/top", "+", "-"]
+        commands = ["/start", "/top", "+", "-", "похвали"]
         if event.message.text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
         return
@@ -85,6 +83,8 @@ async def star_handler(message: types.Message, state: FSMContext):
     elif message.text == "-":
         await minus_star(message)
         await message.answer("Зірочка віднята, чувак, не плач")
+    elif message.text == "похвали":
+        await message.answer(random.choice(const.ACCEPTABLE_ANSWERS))
 
 
 # INITIALIZATION
