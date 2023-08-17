@@ -10,6 +10,7 @@ import constants as const
 from db import save_user, get_user, add_star, minus_star, get_top_users
 from aiogram.filters import Command
 import random
+from random_gif import get_random_gif
 
 from db import init_database, stop_database
 
@@ -54,6 +55,12 @@ async def start(message: types.Message, state: FSMContext):
     )
     user = await get_user(message)
     await message.answer(f"Привіт, {user.first_name} {user.last_name}!")
+
+
+@dp.message(Command("gif"))
+async def gif(message: types.Message, state: FSMContext):
+    gif_url = await get_random_gif()
+    await bot.send_animation(message.chat.id, gif_url)
 
 
 @dp.message(Command("top"))
