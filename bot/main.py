@@ -35,7 +35,9 @@ async def only_admin_commands(handler, event, data):
 
 @dp.update.outer_middleware()
 async def random_message_middleware(handler, event, data):
-    counter = await redis.get("counter")
+    counter = int(await redis.get("counter"))
+    print(counter)
+    print("!!!!")
     if counter == 10:
         await event.message.answer(random.choice(const.RANDOM_ANSWERS))
         await redis.set("counter", 0)
