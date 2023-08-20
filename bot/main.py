@@ -3,6 +3,7 @@ import logging
 import random
 
 from aiogram import types
+from aiogram.enums import ChatMemberStatus
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -50,15 +51,22 @@ async def clean_chat_info(handler, event, data):
     delete_members = []
     for user in all_chat_users:
         try:
-            await bot.get_chat_member(chat_id=chat_id, user_id=user.telegramID)
+            member = await bot.get_chat_member(chat_id=chat_id, user_id=user.telegramID)
+            if member.status == ChatMemberStatus.LEFT:
+                delete_members.append(user.telegramID)
         except TelegramBadRequest:
+            print("BAD REQUEST")
             delete_members.append(user.telegramID)
+
+    print(delete_members)
     await delete_users_by_id(chat_id, delete_members)
     return await handler(event, data)
 
 
 @dp.update.outer_middleware()
 async def only_admin_commands(handler, event, data):
+    if not event.message.text:
+        await handler(event, data)
     message_text = event.message.text.lower()
     if int(event.message.from_user.id) != int(
             ADMIN_ID) and message_text != "/gif" and message_text != "/gif@python_kublo_bot":
@@ -103,7 +111,7 @@ async def top(message: types.Message, state: FSMContext):
 async def star_handler(message: types.Message, state: FSMContext):
     if message.text == "+":
         await add_star(message)
-        await message.answer("Зірочка додана, сучка")
+        await message.answer("Зірочка додана")
     elif message.text == "-":
         await minus_star(message)
         await message.answer("Зірочка віднята, чувак, не плач")
