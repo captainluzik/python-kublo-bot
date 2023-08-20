@@ -59,15 +59,15 @@ async def clean_chat_info(handler, event, data):
 
 @dp.update.outer_middleware()
 async def only_admin_commands(handler, event, data):
-    print("Only admin")
+    message_text = event.message.text.lower()
     if int(event.message.from_user.id) != int(
-            ADMIN_ID) and event.message.text != "/gif" and event.message.text != "/gif@python_kublo_bot":
+            ADMIN_ID) and message_text != "/gif" and message_text != "/gif@python_kublo_bot":
         commands = ["/start", "/top", "+", "-", "похвали"]
-        if event.message.text in commands:
+        if message_text in commands:
             await event.message.answer("Ви не адміністратор, пішов нахуй")
         return
     else:
-        if event.message.text == "/gif" or event.message.text == "/gif@python_kublo_bot":
+        if message_text == "/gif" or event.message.text == "/gif@python_kublo_bot":
             pass
     return await handler(event, data)
 
