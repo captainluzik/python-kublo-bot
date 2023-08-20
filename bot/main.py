@@ -1,5 +1,7 @@
 import logging
 import asyncio
+
+from aiogram.methods import get_chat_member
 from aiohttp.web import Application, run_app
 from dispatcher import dp, bot, redis, storage
 from settings import WEBHOOK_PATH, WEBHOOK_DOMAIN, LOCAL_MODE, ADMIN_ID
@@ -7,7 +9,7 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 import constants as const
-from db import save_user, get_user, add_star, minus_star, get_top_users
+from db import save_user, get_user, add_star, minus_star, get_top_users, get_all_chat_users
 from aiogram.filters import Command
 import random
 from random_gif import get_random_gif
@@ -19,13 +21,16 @@ logging.basicConfig(level=logging.DEBUG)
 
 @dp.update.outer_middleware()
 async def random_message_middleware(handler, event, data):
-    counter = int(await redis.get("counter"))
-    if counter == 10:
+    counter = await redis.get("counter")
+    if not counter:
+        await redis.set("counter", 1)
+        return
+    elif int(counter) == 10:
         await event.message.answer(random.choice(const.RANDOM_ANSWERS))
         await redis.set("counter", 0)
         return
     else:
-        await redis.set("counter", int(counter) + 1) if counter else await redis.set("counter", 1)
+        await redis.set("counter", int(counter) + 1)
     return await handler(event, data)
 
 
