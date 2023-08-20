@@ -111,7 +111,7 @@ async def top(message: types.Message, state: FSMContext):
 async def star_handler(message: types.Message, state: FSMContext):
     if message.text == "+":
         await add_star(message)
-        await message.answer("Зірочка додана")
+        await message.answer("Зірочка додана, сучка")
     elif message.text == "-":
         await minus_star(message)
         await message.answer("Зірочка віднята, чувак, не плач")
