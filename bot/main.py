@@ -11,7 +11,8 @@ from aiohttp.web import Application, run_app
 
 import constants as const
 from db import init_database, stop_database
-from db import save_user, get_user, add_star, minus_star, get_top_users, get_all_chat_users, delete_users_by_id
+from db import (save_user, get_user, add_star, minus_star, get_top_users,
+                delete_users_by_id, update_user_admin_status, get_users_filtered)
 from dispatcher import dp, bot, redis, storage
 from random_gif import get_random_gif
 from settings import WEBHOOK_PATH, WEBHOOK_DOMAIN, LOCAL_MODE, ADMIN_ID
@@ -34,21 +35,19 @@ async def random_message_middleware(handler, event, data):
 
 @dp.update.outer_middleware()
 async def save_user_middleware(handler, event, data):
-    print("save user")
-    user = await save_user(event.message)
+    admin_members = await bot.get_chat_administrators(event.message.chat.id)
+    user_id = event.message.from_user.id
+    admin_ids = map(lambda admin_member: admin_member.user.id, admin_members)
+    user = await save_user(event.message, is_admin=user_id in admin_ids)
     data['user'] = user
     return await handler(event, data)
 
 
 @dp.update.outer_middleware()
 async def clean_chat_info(handler, event, data):
-    print("Clean chat")
-    all_chat_users = await get_all_chat_users(event.message)
+    all_chat_users = await get_users_filtered(chatID=int(event.message.chat.id))
     chat_id = int(event.message.chat.id)
     delete_members = []
-    for admin_member in await bot.get_chat_administrators(chat_id=chat_id):
-        if not admin_member.user.is_bot:
-            delete_members.append(admin_member.user.id)
     for user in all_chat_users:
         try:
             await bot.get_chat_member(chat_id=chat_id, user_id=user.telegramID)
@@ -93,6 +92,8 @@ async def top(message: types.Message, state: FSMContext):
     top_users = await get_top_users(message)
     top_user_string = ""
     await message.answer("Топ в кублі:")
+    if not top_users:
+        await message.answer("Топ зараз порожній.")
     for user in top_users:
         top_user_string += f"{user.first_name} {user.last_name} - {user.stars}⭐️\n"
     await message.answer(top_user_string)
@@ -116,6 +117,23 @@ async def _on_startup(app):
     await bot.set_webhook(WEBHOOK_DOMAIN + WEBHOOK_PATH)
 
 
+async def _update_old_users_status():
+    all_users = await get_users_filtered()
+    chats = {}
+    for user in all_users:
+        if not chats.get(user.chatID):
+            chats[user.chatID] = list(map(
+                lambda admin: admin.user.id, await bot.get_chat_administrators(chat_id=user.chatID)
+            ))
+        await update_user_admin_status(user, user.telegramID in chats[user.chatID])
+
+
+async def _update_existing_data():
+    if await get_users_filtered(is_admin=None):
+        await _update_old_users_status()
+        print("Users info updated")
+
+
 async def _on_shutdown(app):
     await bot.delete_webhook()
     await storage.close()
@@ -124,6 +142,7 @@ async def _on_shutdown(app):
 async def _init(*_):
     print("Init database")
     await init_database()
+    await _update_existing_data()
 
 
 async def _shutdown(*_):
