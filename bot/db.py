@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 
 from aiogram import types
 from sqlalchemy import (
-    Column, Integer, String, select, insert, literal_column, update, BigInteger, delete
+    Column, Integer, String, select, insert, literal_column, update, BigInteger, delete, Boolean
 )
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy.orm import declarative_base
@@ -17,8 +17,6 @@ engine: Optional[AsyncEngine] = None
 async def init_database():
     global engine
     engine = create_async_engine(DATABASE_URI, echo=True)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 
 async def stop_database():
@@ -36,12 +34,13 @@ class User(Base):
     last_name = Column(String(32), nullable=True)
     chatID = Column(BigInteger, nullable=True)
     stars = Column(Integer, default=0)
+    is_admin = Column(Boolean, nullable=True)
 
     def __repr__(self):
         return f"<User(first_name={self.first_name}, last_name={self.last_name})>"
 
 
-async def save_user(message: types.Message) -> User:
+async def save_user(message: types.Message, is_admin: bool = False) -> User:
     user_id = int(message.from_user.id)
     chat_id = int(message.chat.id)
     username = message.from_user.username if message.from_user.username else None
@@ -59,7 +58,8 @@ async def save_user(message: types.Message) -> User:
                 username=username,
                 first_name=first_name,
                 last_name=last_name,
-                chatID=chat_id
+                chatID=chat_id,
+                is_admin=is_admin
             ).returning(literal_column("*"))
             result = await conn.execute(stmt)
             user = result.fetchone()
@@ -124,21 +124,31 @@ async def minus_star(message: types.Message):
 async def get_top_users(message: types.Message):
     chat_id = int(message.chat.id)
     async with engine.begin() as conn:
-        stmt = select(User).where(User.chatID == chat_id).order_by(User.stars.desc())
+        stmt = select(User).where(User.chatID == chat_id,
+                                  User.is_admin == False
+                                  ).order_by(User.stars.desc())
         result = await conn.execute(stmt)
         users = result.fetchall()
         return users
 
 
-async def get_all_chat_users(message: types.Message) -> Sequence[User]:
-    chat_id = int(message.chat.id)
-    async with engine.begin() as conn:
-        stmt = select(User).where(User.chatID == chat_id)
-        result = await conn.execute(stmt)
-        return result.fetchall()
-
-
 async def delete_users_by_id(chat_id: int, user_id_list: list[int]):
     async with engine.begin() as conn:
         stmt = delete(User).where(User.chatID == chat_id, User.telegramID.in_(user_id_list))
+        await conn.execute(stmt)
+
+
+async def get_users_filtered(**kwargs):
+    async with engine.begin() as conn:
+        result = await conn.execute(select(User).filter_by(**kwargs))
+        return result.fetchall()
+
+
+async def update_user_admin_status(user: User, is_admin: bool):
+    async with engine.begin() as conn:
+        stmt = (
+            update(User)
+            .values(is_admin=is_admin)
+            .where(User.telegramID == user.telegramID)
+        )
         await conn.execute(stmt)
