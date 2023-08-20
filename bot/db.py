@@ -2,7 +2,7 @@ from typing import Optional, Sequence
 
 from aiogram import types
 from sqlalchemy import (
-    Column, Integer, String, select, insert, literal_column, update, BigInteger
+    Column, Integer, String, select, insert, literal_column, update, BigInteger, delete
 )
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy.orm import declarative_base
@@ -133,6 +133,12 @@ async def get_top_users(message: types.Message):
 async def get_all_chat_users(message: types.Message) -> Sequence[User]:
     chat_id = int(message.chat.id)
     async with engine.begin() as conn:
-        stmt = select(User).filter_by(chatID=chat_id)
+        stmt = select(User).where(User.chatID == chat_id)
         result = await conn.execute(stmt)
         return result.fetchall()
+
+
+async def delete_users_by_id(chat_id: int, user_id_list: list[int]):
+    async with engine.begin() as conn:
+        stmt = delete(User).where(User.chatID == chat_id, User.telegramID.in_(user_id_list))
+        await conn.execute(stmt)
