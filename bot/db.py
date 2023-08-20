@@ -1,13 +1,13 @@
-from aiogram import types
-from typing import Optional
+from typing import Optional, Sequence
 
+from aiogram import types
 from sqlalchemy import (
     Column, Integer, String, select, insert, literal_column, update, BigInteger
 )
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+from sqlalchemy.orm import declarative_base
 
 from settings import DATABASE_URI
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 
 Base = declarative_base()
 
@@ -128,3 +128,11 @@ async def get_top_users(message: types.Message):
         result = await conn.execute(stmt)
         users = result.fetchall()
         return users
+
+
+async def get_all_chat_users(message: types.Message) -> Sequence[User]:
+    chat_id = int(message.chat.id)
+    async with engine.begin() as conn:
+        stmt = select(User).filter_by(chatID=chat_id)
+        result = await conn.execute(stmt)
+        return result.fetchall()
