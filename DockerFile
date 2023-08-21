@@ -8,11 +8,15 @@ RUN pip install "poetry==$POETRY_VERSION"
 
 WORKDIR /app
 
-COPY pyproject.toml poetry.lock  ./
-RUN poetry install --no-interaction --no-ansi --no-dev
+COPY pyproject.toml entrypoint.sh ./
+RUN poetry install --no-interaction --no-ansi --only main
 
 COPY bot /app
+COPY alembic.ini ./alembic.ini
+COPY alembic ./alembic
 
 EXPOSE 8000
 
-CMD ["python", "main.py", "--polling"]
+RUN chmod +x entrypoint.sh
+
+CMD ["./entrypoint.sh"]
