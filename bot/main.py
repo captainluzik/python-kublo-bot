@@ -126,14 +126,17 @@ async def _on_startup(app):
 
 
 async def _update_old_users_status():
-    all_users = await get_users_filtered()
-    chats = {}
-    for user in all_users:
-        if not chats.get(user.chatID):
-            chats[user.chatID] = list(map(
-                lambda admin: admin.user.id, await bot.get_chat_administrators(chat_id=user.chatID)
-            ))
-        await update_user_admin_status(user, user.telegramID in chats[user.chatID])
+    try:
+        all_users = await get_users_filtered()
+        chats = {}
+        for user in all_users:
+            if not chats.get(user.chatID):
+                chats[user.chatID] = list(map(
+                    lambda admin: admin.user.id, await bot.get_chat_administrators(chat_id=user.chatID)
+                ))
+            await update_user_admin_status(user, user.telegramID in chats[user.chatID])
+    except Exception as e:
+        print(e)
 
 
 async def _update_existing_data():
